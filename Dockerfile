@@ -1,7 +1,25 @@
-# Updated Dockerfile to use COPY with wildcard for package-lock.json
+FROM node:18-alpine AS builder
 
-#... Previous Dockerfile Content
+WORKDIR /app
 
 COPY package*.json ./
 
-#... Rest of Dockerfile Content
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN npm install -g serve
+
+COPY --from=builder /app/build ./dist
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+
+CMD ["serve", "-s", "dist", "-l", "3000"]
