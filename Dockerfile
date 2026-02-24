@@ -1,1 +1,25 @@
-FROM node:14-slim\n\n# Set the working directory\nWORKDIR /app\n\n# Copy package.json and package-lock.json\nCOPY package.json .\nCOPY package-lock.json .\n\n# Install dependencies using npm\nRUN npm install --production\n\n# Copy the rest of the application source code\nCOPY . .\n\n# Build the TypeScript code\nRUN npm run build\n\n# Serve the app using a lightweight server\nCMD [ "npx", "serve", "build" ]\n
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
+
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN npm install -g serve
+
+COPY --from=builder /app/build ./dist
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+
+CMD ["serve", "-s", "dist", "-l", "3000"]
